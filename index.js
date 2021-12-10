@@ -1,9 +1,11 @@
 const tmi = require('tmi.js');
 const settings = require('./settings.json');
-const {createPool} = require('mysql');
+const mysql = require('mysql');
+const { NULL } = require('mysql/lib/protocol/constants/types');
+
 let username = "";
 
-const pool = createPool({
+const pool = mysql.createPool({
     host: "localhost",
     user: "root",
     password: "",
@@ -22,7 +24,7 @@ const twitchclient = new tmi.client(
             username:settings.TwitchUser,
             password:settings.TwitchAuth
         },
-        channels: ["wojtiwojciech"]
+        channels: ["YOUR CHANNEL"]
     }
 )
 
@@ -34,19 +36,31 @@ twitchclient.on("connected",(address,port) =>{
 
 twitchclient.on("message",(channel,context, message, self) =>{
     username = context["display-name"];
-    console.log(username);
-    if (username == "wojtiwojciech", message.toLowerCase() == settings.Prefix +"hej"){
+    if (message.toLowerCase() == settings.Prefix +"hej"){
         twitchclient.say(channel,"hej")
     };
 })
 
 twitchclient.on("message",(channel,context, message, self) =>{
     username = context["display-name"];
+    let insertQuery = 'INSERT INTO test(id, user) VALUES(?, ?)';
+    let query = mysql.format(insertQuery,['$1',username]);
     console.log(username);
-    pool.query("INSERT INTO test VALUES (NULL," + username + ")", function(err, result, fields) {
+    console.log(message);
+    pool.query(query, (err, result, fields) => {
+        console.log(result);
         if (err) {
-            return console.log(err);
-        }
-        return console.log(result);
-    })
+        return console.error(err);
+         }
+         return result;
+    } 
+);
+
+});
+
+twitchclient.on('message', (channel, context, message, self) => {
+    console.log(context);
+    if (context["custom-reward-id"] === "YOUR CUSTON REWARD CODE") {
+        twitchclient.say(channel,"!sr" + message)
+    }
 })
